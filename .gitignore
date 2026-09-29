@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-ssr/
+
+# Security, Credentials & Environment (Protected)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.token
+*credential*
+*secret*
+
+# Scratch, Captures & Internal Design Workspaces (Protected)
+scratch/
+MEMORY.md
+MERCH_CONCEPTS.md
+Captura*
+public/scratch/
+public/ref_frames/
+public/chatgpt.png
+public/*.mp4
+public/test_*
+public/*_real.jpg
+public/*_real.png
+public/crop_*
+public/authentic_back_blank.png
+public/hoodie_clean_back_base.png
+public/test_pure_back_base.png
+public/perfect_3d_chrome_logo.png
+public/thumb_washed_black.png
+public/gothic_arched_logo.svg
+public/gothic_backplate.svg
+public/gothic_synical.svg
+public/hoodie_*.svg
+public/artworks/presentation_sheet_*
+
+# System & IDE logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
