@@ -43,15 +43,39 @@ Cada silueta está vinculada conceptualmente a una de las 5 atmósferas 3D:
 ### 5. 🎧 Audio Inmersivo Procedural
 * Motor de audio Web Audio API (cero latencia y sin dependencias externas pesadas) que sintetiza clics metálicos táctiles, arpegios armónicos al añadir al carrito y fanfarrias de compra segura.
 
+### 6. 💼 Portal de Administración & Business Intelligence (`#/admin`)
+* **Acceso Seguro por PIN Maestro**: Protección de interfaz administrativa con autenticación por PIN configurable (`VITE_ADMIN_PIN` o valor demo `SYNICAL2026`) y atajo de teclado rápido (`Ctrl + Shift + A`).
+* **Gestión Integral de Órdenes & Fulfillment**:
+  * Visualización de pedidos con filtros por estatus (*En Cola*, *En Proceso*, *Enviado*, *Entregado*).
+  * Asignación en tiempo real de paqueterías (DHL Express, FedEx Priority, Estafeta) y números de guía oficiales con persistencia dual (API REST + Local Storage).
+  * Generador e impresión térmica de **Albaranes de Empaque (Packing Slips)** con códigos de barras y desglose de prendas.
+  * Exportación de manifiestos logísticos para couriers.
+* **Control de Inventario en Tiempo Real**:
+  * Monitor de existencias por talla (S, M, L, XL) con alertas de stock crítico (≤ 2 unidades).
+  * Ajuste instantáneo de stock con un clic (+ / -).
+  * Formulario de alta para nuevas cápsulas textiles.
+* **Módulo de Analítica y Finanzas**:
+  * 6 KPIs ejecutivos: Facturación Bruta (GMV), Volumen de Pedidos, Ticket Promedio (AOV), Tasa de Conversión (CR), Margen de Confección y SLA de Despacho.
+  * Gráfica de ingresos diarios y cumplimiento de metas comerciales.
+  * Curva de rotación de tallas y ranking de siluetas más vendidas.
+  * Desglose geográfico de demanda y desempeño comparativo de couriers.
+
+### 7. 📦 Rastreador de Envíos en Tiempo Real
+* Modal público de seguimiento accesible desde el Navbar y Footer (`SYN-XXXXXX`).
+* Barra de progreso en 4 fases logísticas: *Orden Recibida*, *En Confección*, *En Tránsito*, *Entregado*.
+* Visualización directa de la paquetería y número de guía asignados desde el panel de administración.
+
 ---
 
 ## 🛠️ Stack Tecnológico
 
 * **Frontend**: React 19, Vite 8
 * **Gráficos 3D & Shaders**: Three.js, React Three Fiber (`@react-three/fiber`), Drei (`@react-three/drei`), Postprocessing (`@react-three/postprocessing`)
+* **Backend & API**: Node.js, Express 5, CORS, Dotenv, Stripe SDK
+* **Base de Datos & Realtime**: Supabase (PostgreSQL), Row Level Security (RLS), Triggers atómicos de inventario
 * **Animaciones UI**: Framer Motion, Canvas Confetti
 * **Estilos & Diseño**: Tailwind CSS, PostCSS, Lucide React
-* **Estado Global**: Zustand con persistencia en `localStorage`
+* **Estado Global**: Zustand con persistencia en `localStorage` y arquitectura resiliente de fallback
 
 ---
 
@@ -68,13 +92,29 @@ Cada silueta está vinculada conceptualmente a una de las 5 atmósferas 3D:
    npm install
    ```
 
-3. **Iniciar el servidor de desarrollo:**
+3. **Configurar variables de entorno (Opcional):**
    ```bash
-   npm run dev
+   cp .env.example .env
    ```
-   Abre [http://localhost:5173/](http://localhost:5173/) en tu navegador.
+   *(El proyecto incluye fallback automático para operar al 100% de manera local sin necesidad de configurar servicios externos)*.
 
-4. **Compilar para producción:**
+4. **Iniciar en desarrollo:**
+   * **Frontend + API Backend simultáneo:**
+     ```bash
+     npm run dev:all
+     ```
+   * **Solo Frontend:**
+     ```bash
+     npm run dev
+     ```
+   * **Solo API Server:**
+     ```bash
+     npm run server
+     ```
+   Abre [http://localhost:5173/](http://localhost:5173/) en tu navegador.
+   Para acceder al panel de administración entra a [http://localhost:5173/#/admin](http://localhost:5173/#/admin) o presiona `Ctrl + Shift + A` (PIN demo: `SYNICAL2026`).
+
+5. **Compilar para producción:**
    ```bash
    npm run build
    ```

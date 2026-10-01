@@ -23,6 +23,9 @@ scratch/
 MEMORY.md
 MERCH_CONCEPTS.md
 Captura*
+hoodie_concepto*
+*concepto*
+*CONCEPTO*
 public/scratch/
 public/ref_frames/
 public/chatgpt.png
@@ -41,6 +44,19 @@ public/gothic_backplate.svg
 public/gothic_synical.svg
 public/hoodie_*.svg
 public/artworks/presentation_sheet_*
+public/artworks/SYNICAL_*
+public/artworks/artwork_celestial_noir*
+public/hoodie_celestial_noir*
+
+# Generated CSV Exports, Logistics & Customer Records (Protected)
+*.csv
+public/*.csv
+synical_envios_export*
+
+# Server Outbox, Test Emails & Runtime Orders
+server/emails_outbox/
+server/data/orders.json
+*.outbox
 
 # System & IDE logs
 logs/

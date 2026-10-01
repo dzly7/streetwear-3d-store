@@ -15,10 +15,56 @@
   }
 }
 
-/* Hide native OS cursor ONLY on desktop precision pointers to prevent double-cursor glitch */
+/* Hide native OS cursor ONLY when custom cursor is active, and NEVER on inputs or admin backoffice */
 @media (hover: hover) and (pointer: fine) {
-  body, a, button, input, select, textarea, [role="button"], .cursor-pointer {
+  body.custom-cursor-enabled:not(.admin-mode) {
+    cursor: none;
+  }
+  
+  body.custom-cursor-enabled:not(.admin-mode) a,
+  body.custom-cursor-enabled:not(.admin-mode) button,
+  body.custom-cursor-enabled:not(.admin-mode) [role="button"],
+  body.custom-cursor-enabled:not(.admin-mode) .cursor-pointer {
     cursor: none !important;
+  }
+
+  /* Form inputs ALWAYS keep standard native text cursor for typing and selection */
+  input, textarea, select {
+    cursor: text !important;
+  }
+
+  select, input[type="checkbox"], input[type="radio"], input[type="button"], input[type="submit"] {
+    cursor: pointer !important;
+  }
+
+  /* Admin Backoffice and Native Cursor Zones ALWAYS use full native OS cursor */
+  .admin-portal,
+  .admin-portal *,
+  .native-cursor,
+  .native-cursor *,
+  body.admin-mode,
+  body.admin-mode * {
+    cursor: auto !important;
+  }
+
+  .admin-portal a,
+  .admin-portal button,
+  .admin-portal select,
+  .admin-portal [role="button"],
+  .admin-portal .cursor-pointer,
+  .native-cursor a,
+  .native-cursor button,
+  .native-cursor select,
+  .native-cursor [role="button"],
+  .native-cursor .cursor-pointer {
+    cursor: pointer !important;
+  }
+
+  .admin-portal input,
+  .admin-portal textarea,
+  .native-cursor input,
+  .native-cursor textarea {
+    cursor: text !important;
   }
 }
 

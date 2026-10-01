@@ -128,7 +128,7 @@ export default function CheckoutModal() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCompleteOrder = () => {
+  const handleCompleteOrder = async () => {
     if (cart.length === 0) {
       showNotification('Tu bolsa está vacía', 'warning');
       return;
@@ -141,7 +141,79 @@ export default function CheckoutModal() {
 
     setIsProcessing(true);
 
-    setTimeout(() => {
+    try {
+      // 1. Intentar llamar a la API de Stripe
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart,
+          customer: formData,
+          shippingMethod,
+          discount: appliedDiscount
+        })
+      });
+
+      const data = await response.json();
+
+      // Si Stripe devolvió URL oficial de pago, redirigir al checkout seguro
+      if (data?.url) {
+        showNotification('Redirigiendo a pasarela segura de Stripe...', 'info');
+        window.location.href = data.url;
+        return;
+      }
+
+      // Si estamos en modo de prueba / simulación local o dev
+      setIsProcessing(false);
+      confetti({
+        particleCount: 140,
+        spread: 90,
+        origin: { y: 0.6 }
+      });
+
+      const orderNumber = data?.orderNumber || `SYN-${Math.floor(100000 + Math.random() * 900000)}`;
+      const date = new Date().toLocaleString('es-MX', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+
+      const cardLast4 = formData.cardNumber.replace(/\s/g, '').slice(-4) || '4242';
+
+      const receipt = {
+        orderNumber,
+        date,
+        items: [...cart],
+        customer: { ...formData },
+        subtotal,
+        discountAmount,
+        appliedDiscount,
+        shippingCost,
+        shippingMethod: shippingMethod === 'express' ? 'Envío Express 24-48h' : 'Envío Estándar Asegurado (Gratis)',
+        total,
+        paymentMethod: paymentMethod === 'apple' ? 'Apple Pay / Google Wallet' : `Tarjeta terminada en •••• ${cardLast4}`
+      };
+
+      try {
+        localStorage.setItem('synical_last_order', JSON.stringify(receipt));
+      } catch {}
+
+      // Persistir orden en el backend para el panel de administración
+      fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(receipt)
+      }).catch(() => {});
+
+      // Disparar envío o preview de correo transaccional
+      fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(receipt)
+      }).catch(() => {});
+
+      setOrderReceipt(receipt);
+    } catch (err) {
+      console.warn('[CHECKOUT] Fallback local ejecutado:', err);
       setIsProcessing(false);
       confetti({
         particleCount: 140,
@@ -157,7 +229,7 @@ export default function CheckoutModal() {
 
       const cardLast4 = formData.cardNumber.replace(/\s/g, '').slice(-4) || '4242';
 
-      setOrderReceipt({
+      const receipt = {
         orderNumber,
         date,
         items: [...cart],
@@ -169,8 +241,21 @@ export default function CheckoutModal() {
         shippingMethod: shippingMethod === 'express' ? 'Envío Express 24-48h' : 'Envío Estándar Asegurado (Gratis)',
         total,
         paymentMethod: paymentMethod === 'apple' ? 'Apple Pay / Google Wallet' : `Tarjeta terminada en •••• ${cardLast4}`
-      });
-    }, 1200);
+      };
+
+      try {
+        localStorage.setItem('synical_last_order', JSON.stringify(receipt));
+      } catch {}
+
+      // Persistir orden en el backend para el panel de administración
+      fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(receipt)
+      }).catch(() => {});
+
+      setOrderReceipt(receipt);
+    }
   };
 
   return (
@@ -370,8 +455,31 @@ export default function CheckoutModal() {
 
                 {paymentMethod === 'card' ? (
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/15 space-y-3 text-xs font-mono">
+                    {/* Test Mode Warning Banner */}
+                    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 text-[11px] leading-relaxed">
+                      <AlertCircle size={16} className="flex-shrink-0 text-amber-400 mt-0.5" />
+                      <div className="flex-1">
+                        <span className="font-bold text-amber-300 block">MODO DE PRUEBA LOCAL (SIMULACIÓN):</span>
+                        <span>No ingreses tarjetas reales. Puedes usar números de prueba o presionar este botón:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              cardNumber: '4242 4242 4242 4242',
+                              cardExp: '12/28',
+                              cardCvc: '123'
+                            }));
+                          }}
+                          className="mt-2 block px-2.5 py-1 rounded-lg bg-amber-400/20 border border-amber-300/40 text-amber-100 hover:bg-amber-400/30 text-[10px] font-bold tracking-wider uppercase cursor-pointer transition-colors"
+                        >
+                          ⚡ Llenar con Tarjeta de Prueba (4242)
+                        </button>
+                      </div>
+                    </div>
+
                     <div>
-                      <label className="text-[10px] text-white/60 block mb-1">NÚMERO DE TARJETA *</label>
+                      <label className="text-[10px] text-white/60 block mb-1">NÚMERO DE TARJETA (PRUEBA) *</label>
                       <input
                         type="text"
                         placeholder="•••• •••• •••• ••••"

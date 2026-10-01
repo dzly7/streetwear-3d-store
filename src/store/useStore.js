@@ -93,6 +93,22 @@ export const useStore = create((set, get) => ({
   },
   closeVault: () => set({ isVaultOpen: false }),
 
+  // Order Tracker Modal (Rastreo de envíos)
+  isOrderTrackerOpen: false,
+  openOrderTracker: () => {
+    audio.playClickSound();
+    set({ isOrderTrackerOpen: true });
+  },
+  closeOrderTracker: () => set({ isOrderTrackerOpen: false }),
+
+  // Secret Admin Backoffice Dashboard
+  isAdminOpen: false,
+  openAdmin: () => {
+    audio.playClickSound();
+    set({ isAdminOpen: true });
+  },
+  closeAdmin: () => set({ isAdminOpen: false }),
+
   // Toast notification system
   notification: null,
   showNotification: (msg, type = 'info') => {

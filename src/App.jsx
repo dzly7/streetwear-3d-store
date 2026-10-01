@@ -14,10 +14,13 @@ import CheckoutModal from './components/ui/CheckoutModal';
 import OrderReceiptModal from './components/ui/OrderReceiptModal';
 import PolicyModal from './components/ui/PolicyModal';
 import VaultModal from './components/ui/VaultModal';
+import OrderTrackerModal from './components/ui/OrderTrackerModal';
+import AdminDashboard from './components/admin/AdminDashboard';
 import CustomCursor from './components/ui/CustomCursor';
 import InstagramLookbook from './components/ui/InstagramLookbook';
 import Footer from './components/ui/Footer';
-import { PRODUCTS } from './data/products';
+import { PRODUCTS as DEFAULT_PRODUCTS } from './data/products';
+import { storeService } from './services/supabase';
 import { useStore } from './store/useStore';
 import { Filter, Layers, RefreshCw, X } from 'lucide-react';
 
@@ -28,13 +31,19 @@ export default function App() {
     isSearchOpen,
     isSizeGuideOpen,
     isCheckoutOpen,
+    isOrderTrackerOpen,
     orderReceipt,
     policyModal,
     isVaultOpen,
+    isAdminOpen,
+    openAdmin,
+    closeAdmin,
     notification,
-    clearNotification
+    clearNotification,
+    showNotification
   } = useStore();
 
+  const [products, setProducts] = useState(DEFAULT_PRODUCTS);
   const [selectedGsm, setSelectedGsm] = useState('ALL'); // 'ALL' | '460' | '480' | '500'
   const [globalSide, setGlobalSide] = useState('front'); // 'front' | 'back'
 
@@ -45,10 +54,99 @@ export default function App() {
     isSearchOpen ||
     isSizeGuideOpen ||
     isCheckoutOpen ||
+    isOrderTrackerOpen ||
+    isAdminOpen ||
     orderReceipt ||
     policyModal ||
     isVaultOpen
   );
+
+  // Routing detection for dedicated /admin or #/admin
+  const checkIsAdmin = () => {
+    return window.location.pathname.startsWith('/admin') || window.location.hash.startsWith('#/admin');
+  };
+  const [isAdminRoute, setIsAdminRoute] = useState(checkIsAdmin);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setIsAdminRoute(checkIsAdmin());
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
+
+  // Ensure body classes allow native cursor in admin mode
+  useEffect(() => {
+    if (isAdminRoute) {
+      document.body.classList.add('admin-mode');
+      document.body.classList.remove('custom-cursor-enabled');
+    } else {
+      document.body.classList.remove('admin-mode');
+    }
+  }, [isAdminRoute]);
+
+  // Secret Admin Shortcut: Ctrl + Shift + A
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        window.location.hash = '#/admin';
+        setIsAdminRoute(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Load products from Supabase (or fallback to local) & subscribe to realtime inventory
+  useEffect(() => {
+    let unsubscribe = () => {};
+    
+    storeService.getProducts().then((liveProducts) => {
+      if (liveProducts && liveProducts.length > 0) {
+        setProducts(liveProducts);
+      }
+    });
+
+    unsubscribe = storeService.subscribeToInventory((newInv) => {
+      setProducts((prev) =>
+        prev.map((prod) => {
+          if (prod.id === newInv.product_id) {
+            return {
+              ...prod,
+              stock: {
+                ...prod.stock,
+                [newInv.size]: newInv.stock_quantity
+              }
+            };
+          }
+          return prod;
+        })
+      );
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Listen to Stripe payment redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('order_success') === 'true') {
+      const orderNum = params.get('order_number') || 'SYN-PAGO';
+      showNotification(`¡Pago confirmado con éxito en Stripe! Pedido ${orderNum} en proceso.`, 'success');
+      import('canvas-confetti').then((m) => {
+        m.default({ particleCount: 160, spread: 100, origin: { y: 0.6 } });
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('order_cancelled') === 'true') {
+      showNotification('El proceso de pago fue cancelado. Tu bolsa sigue guardada.', 'info');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [showNotification]);
 
   useEffect(() => {
     if (isAnyModalOpen) {
@@ -68,10 +166,47 @@ export default function App() {
   }, [isAnyModalOpen]);
 
   // Filter products by GSM
-  const filteredProducts = PRODUCTS.filter((p) => {
+  const filteredProducts = products.filter((p) => {
     if (selectedGsm === 'ALL') return true;
-    return p.tagline.includes(selectedGsm) || p.description.includes(selectedGsm);
+    return p.tagline?.includes(selectedGsm) || p.description?.includes(selectedGsm);
   });
+
+  // Standalone Admin Route Mode
+  if (isAdminRoute) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white font-mono selection:bg-purple-500 selection:text-black admin-portal native-cursor">
+        <AdminDashboard
+          isStandalone={true}
+          onExitAdmin={() => {
+            window.location.hash = '';
+            window.history.pushState({}, '', '/');
+            setIsAdminRoute(false);
+          }}
+        />
+        {/* Floating Real-Time Toast Notifications */}
+        <AnimatePresence>
+          {notification && (
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              onClick={clearNotification}
+              className={`fixed bottom-6 right-6 z-[9990] max-w-sm px-4 py-3 rounded-2xl glass-panel border flex items-center justify-between shadow-2xl cursor-pointer ${
+                notification.type === 'warning'
+                  ? 'border-amber-400/60 bg-amber-950/85 text-amber-200'
+                  : notification.type === 'success'
+                  ? 'border-emerald-400/60 bg-emerald-950/85 text-emerald-200'
+                  : 'border-sky-400/60 bg-slate-950/90 text-white'
+              }`}
+            >
+              <span className="text-xs font-mono font-bold tracking-wider mr-3">{notification.msg}</span>
+              <X size={14} className="opacity-60 hover:opacity-100 flex-shrink-0" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen text-white select-none selection:bg-sky-400 selection:text-black">
@@ -213,6 +348,8 @@ export default function App() {
       <OrderReceiptModal />
       <PolicyModal />
       <VaultModal />
+      <OrderTrackerModal />
+      <AdminDashboard isOpen={isAdminOpen} onClose={closeAdmin} />
 
       {/* Floating Real-Time Toast Notifications */}
       <AnimatePresence>

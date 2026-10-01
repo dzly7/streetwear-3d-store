@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Sparkles, User, Menu, X, Volume2, VolumeX, Key, Lock } from 'lucide-react';
+import { ShoppingBag, Search, Sparkles, User, Menu, X, Volume2, VolumeX, Key, Lock, Package } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
 export default function Navbar() {
@@ -13,7 +13,8 @@ export default function Navbar() {
     isSoundEnabled,
     toggleSound,
     openPolicyModal,
-    openVault
+    openVault,
+    openOrderTracker
   } = useStore();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -49,6 +50,9 @@ export default function Navbar() {
           <div className="flex items-center space-x-7">
             <a href="#shop" className="hover:text-sky-300 transition-colors">CATÁLOGO</a>
             <a href="#shop" className="hover:text-sky-300 transition-colors">COLECCIONES</a>
+            <button onClick={openOrderTracker} className="hover:text-sky-300 transition-colors uppercase cursor-pointer text-sky-300">
+              RASTREO
+            </button>
             <button onClick={() => openPolicyModal('contact')} className="hover:text-sky-300 transition-colors uppercase cursor-pointer">
               CONTACTO
             </button>
@@ -127,6 +131,16 @@ export default function Navbar() {
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-400 animate-ping" />
           </button>
 
+          {/* Order Tracking Trigger */}
+          <button
+            onClick={openOrderTracker}
+            className="p-1.5 hover:text-sky-300 transition-colors cursor-pointer"
+            aria-label="Rastrear pedido"
+            title="Rastrear pedido SYNICAL (SYN-XXXXXX)"
+          >
+            <Package size={19} />
+          </button>
+
           {/* Cart Bag */}
           <button
             onClick={toggleCart}
@@ -151,6 +165,9 @@ export default function Navbar() {
           <a href="#shop" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-white hover:text-sky-300">
             Catálogo Completo
           </a>
+          <button onClick={() => { setMobileMenuOpen(false); openOrderTracker(); }} className="block w-full py-2 text-sky-300 hover:text-white uppercase font-bold">
+            📦 Rastrear Pedido
+          </button>
           <button onClick={() => { setMobileMenuOpen(false); openVault(); }} className="block w-full py-2 text-purple-300 hover:text-white uppercase font-bold">
             🔐 Acceso VIP // Drop Vault
           </button>

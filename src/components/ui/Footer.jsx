@@ -117,7 +117,7 @@ export default function Footer() {
         <div>
           © 2026 SYNICAL STUDIOS INC. TODOS LOS DERECHOS RESERVADOS.
         </div>
-        <div className="flex space-x-6">
+        <div className="flex items-center space-x-6">
           <button onClick={() => openPolicyModal('returns')} className="hover:text-white transition-colors uppercase">
             TÉRMINOS
           </button>
